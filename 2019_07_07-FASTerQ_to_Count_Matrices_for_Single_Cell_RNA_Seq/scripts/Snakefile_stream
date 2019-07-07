@@ -1,0 +1,58 @@
+from os.path import join
+configfile: "stream.yaml"
+
+kallisto=config["KALLISTO"]
+bustools=config["BUSTOOLS"]
+thread=config["THREAD"]
+outprefix=config["OUTPUT"]
+index=config["INDEX"]
+chem=config["CHEM"]
+tr2g=config["TR2G"]
+whitelist=config["WHITELIST"]
+url_r1=config["R1"]
+url_r2=config["R2"]
+
+rule all:
+    input: expand("out_stream/{outprefix}/log.txt", outprefix=config["OUTPUT"])
+
+rule get_fastqs:
+    output:
+        "out_stream/{outprefix}/R1.gz",
+        "out_stream/{outprefix}/R2.gz"
+    benchmark:
+        "out_stream/{outprefix}/benchmark/{outprefix}_curl.txt"
+    shell:
+        """
+        mkfifo out_stream/{outprefix}/R1.gz
+        mkfifo out_stream/{outprefix}/R2.gz
+        curl -Ls {url_r1} > out_stream/{outprefix}/R1.gz &
+        curl -Ls {url_r2} > out_stream/{outprefix}/R2.gz &
+        """
+
+rule run_kallisto:
+    input:
+        "out_stream/{outprefix}/R1.gz",
+        "out_stream/{outprefix}/R2.gz"
+    output:
+        "out_stream/{outprefix}/matrix.ec"
+    benchmark:
+        "out_stream/{outprefix}/benchmark/{outprefix}_kallisto.txt"
+    shell:
+        """
+         {kallisto} bus -i {index} -x {chem} -t {thread} -o out_stream/{outprefix} out_stream/{outprefix}/R1.gz out_stream/{outprefix}/R2.gz
+         rm out_stream/{outprefix}/R1.gz
+         rm out_stream/{outprefix}/R2.gz
+        """
+
+rule run_correct_count:
+    input:
+        "out_stream/{outprefix}/matrix.ec"
+    output:
+        "out_stream/{outprefix}/log.txt"
+    benchmark:
+        "out_stream/{outprefix}/benchmark/{outprefix}_bustools.txt"
+    shell:
+        """
+         {bustools} correct -w {whitelist} -p out_stream/{outprefix}/output.bus | {bustools} sort -t {thread} -m 2G -T out_stream/{outprefix} -p - | {bustools} count -o out_stream/{outprefix}/genes -g {tr2g} -e out_stream/{outprefix}/matrix.ec -t out_stream/{outprefix}/transcripts.txt --genecounts -
+         echo "Kallisto single cell pipeline is complete" > out_stream/{outprefix}/log.txt
+        """

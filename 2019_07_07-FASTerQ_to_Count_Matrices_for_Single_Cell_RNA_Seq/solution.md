@@ -13,6 +13,6 @@ $ tar -xvf homo_sapiens.tar
 The we can copy and paste this one-liner
 
 ```
-$ mkfifo R1.gz R2.gz; curl -Ls ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR579/005/SRR5799775/SRR5799775_1.fastq.gz > R1.gz & curl -Ls ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR579/005/SRR5799775/SRR5799775_2.fastq.gz  > R2.gz & kallisto bus -i homo_sapiens/transcriptome.idx -x 10xv2 -t 4 -o bus_out/ R1.gz R2.gz; cd bus_out/; mkdir tmp/; bustools correct -w ../10xv2_whitelist.txt -p output.bus | bustools sort -t 4 -T tmp/ -p - | bustools count -o genes -g ../homo_sapien/transcripts_to_genes.txt -e matrix.ec -t transcripts.txt --genecounts -
+$ mkfifo R1.gz R2.gz; curl -Ls ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR579/005/SRR5799775/SRR5799775_1.fastq.gz > R1.gz & curl -Ls ftp://ftp.sra.ebi.ac.uk/vol1/fastq/SRR579/005/SRR5799775/SRR5799775_2.fastq.gz  > R2.gz & kallisto bus -i homo_sapiens/transcriptome.idx -x 10xv2 -t 4 -o bus_out/ R1.gz R2.gz; cd bus_out/; mkdir tmp/; bustools correct -w ../10xv2_whitelist.txt -p output.bus | bustools sort -t 4 -T tmp/ -p - | bustools count -o genes -g ../homo_sapiens/transcripts_to_genes.txt -e matrix.ec -t transcripts.txt --genecounts -
 ```
 and we have our gene count matrices.
